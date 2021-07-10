@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import math
+import numbers
+import warnings
 from itertools import combinations
 from numpy.random import uniform
 from sklearn.neighbors import NearestNeighbors
@@ -27,7 +29,7 @@ def engineer_categorical_features(data, cat_columns=None, max_comb=None):
     return ret_df[new_cols]
 
 
-class CatAggregate(BaseEstimator, TransformerMixin):
+class CatCrosses(BaseEstimator, TransformerMixin):
     def __init__(self, cat_features=None):
         assert cat_features is None or len(cat_features) > 1, "Combine more than one features"
         self.cat_features = cat_features
@@ -52,7 +54,7 @@ class CatAggregate(BaseEstimator, TransformerMixin):
 
 
 
-class CatQuantAggregate(BaseEstimator, TransformerMixin):
+class CatQuantCrosses(BaseEstimator, TransformerMixin):
     def __init__(self, cats, quants, mappers=['mean', 'median']):
         self.cats = cats
         self.quants = quants
@@ -93,9 +95,10 @@ class CatQuantAggregate(BaseEstimator, TransformerMixin):
         return ret
 
 class PolyTransformation(BaseEstimator, TransformerMixin):
-    def __init__(self, features=None, transformation=np.log10):
+    def __init__(self, features=None, transformation=np.log10, suffix="_poly"):
         self.features = features
         self.transformation = transformation
+        self.suffix = suffix
 
     def fit(self, X, y=None):
         if self.features is None:
@@ -107,7 +110,7 @@ class PolyTransformation(BaseEstimator, TransformerMixin):
     def transform(self, X):
         fitted = self.transformation(X[self.features]+1)
         fitted = pd.DataFrame(fitted, index=X.index, columns=X.columns)
-        fitted = fitted.add_suffix("_poly")
+        fitted = fitted.add_suffix(self.suffix)
         return fitted
 
 class DropFeatures(BaseEstimator, TransformerMixin):
@@ -115,11 +118,6 @@ class DropFeatures(BaseEstimator, TransformerMixin):
         self.features_to_drop = features_to_drop
 
     def fit(self, X, y=None):
-        #diff = np.setdiff1d(self.features_to_drop, X.columns)
-        #if len(diff) > 0:
-        #    raise ValueError("{} columns not found")
-        #if not all(map(lambda feat: feat in X.columns, self.features_to_drop)):
-        #    raise ValueError("Not all features present {}".format(self.features_to_drop))
         common = np.intersect1d(self.features_to_drop, X.columns)
         self.features_to_drop = common
         return self
@@ -136,7 +134,8 @@ class Clustering(BaseEstimator, TransformerMixin):
     def hopkins(self, X):
         d = X.shape[1]
         #d = len(vars) # columns
-        n = len(X) # rows
+        #n = len(X) # rows
+        n = X.shape[0]
         m = int(0.1 * n)
         nbrs = NearestNeighbors(n_neighbors=1).fit(X)
 
@@ -158,7 +157,7 @@ class Clustering(BaseEstimator, TransformerMixin):
         return H
 
     def fit(self, X, y=None):
-        self.columns = X.columns
+        self.columns = getattr(X, 'columns', None)
         X = check_array(X)
         #hopkin_score = self.hopkins(X)
         self.clus_algo.fit(X)
@@ -176,4 +175,26 @@ class Clustering(BaseEstimator, TransformerMixin):
         if index is not None:
             clus = pd.Series(clus, index=index, name=self.name, dtype="category").to_frame()
         return clus
+
+
+class Binning(BaseEstimator, TransformerMixin):
+    def __init__(self, bins, labels=None, suffix="_bin", right=True):
+        self.bins = bins
+        self.suffix = suffix
+        self.right = right
+        if not (labels is None or any(map(lambda val: isinstance(val, numbers.Number), labels))):
+            warnings.warn("Ordinality of data missing by the labels `{}`".format(labels))
+        self.labels = labels
+
+    def fit(self, X, y=None):
+        if X.shape[1] != 1:
+            raise ValueError("Binning with only 1-dimensional data")
+        self.input_shape_ = X.shape
+        return self
+
+    def transform(self, X):
+        if X.shape[1] != 1:
+            raise ValueError("Binning with only 1-dimensional data")
+        trans = pd.cut(X.iloc[:,0], self.bins, self.right, self.labels, ordered=True)
+        return trans.to_frame().add_suffix(self.suffix)
 

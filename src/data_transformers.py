@@ -28,13 +28,10 @@ class Identity(BaseEstimator, TransformerMixin, metaclass=Singleton):
         An identity transformer.
     """
     def fit(self, X, y=None):
-        #self._validate_data(X, y, accept_sparse="csr", dtype=[np.float_, np.int0, np.str0],order="C", accept_large_sparse=True)
-        #X, y = check_X_y(X, y, dtype="numeric", force_all_finite=True)
         self.fitted = True
         return self
 
     def transform(self, X):
-        #self._validate_data(X, accept_sparse="csr", dtype=[np.float_, np.int0, np.str0],order="C", accept_large_sparse=True)
         check_is_fitted(self, ['fitted'])
         return X
 
@@ -275,12 +272,8 @@ class DFStandardScaler(StandardScaler):
         X_tr : {ndarray, sparse matrix} of shape (n_samples, n_features)
             Transformed array.
         """
-        index = None
-        if hasattr(X, 'index'):
-            index = X.index
-        columns = None
-        if hasattr(X, 'columns'):
-            columns = X.columns
+        index = getattr(X, 'index', None)
+        columns = getattr(X, 'columns', None)
         X = super().transform(X, copy)
         if columns is not None and index is not None:
             X = pd.DataFrame(X, columns=columns, index=index)
