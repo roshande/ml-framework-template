@@ -10,7 +10,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 
-__all__ = ['CatCombine', 'CatQuantCombine', 'Clustering']
+__all__ = ['CatCombine', 'CatQuantCombine', 'Clustering', 'Binning']
 
 
 def engineer_categorical_features(data, cat_columns=None, max_comb=None):
@@ -53,7 +53,6 @@ class CatCrosses(BaseEstimator, TransformerMixin):
         return X[self.cat_features].apply(join_values, axis=1).to_frame(colname)
 
 
-
 class CatQuantCrosses(BaseEstimator, TransformerMixin):
     def __init__(self, cats, quants, mappers=['mean', 'median']):
         self.cats = cats
@@ -94,8 +93,9 @@ class CatQuantCrosses(BaseEstimator, TransformerMixin):
             ret.drop(columns=colname, inplace=True)
         return ret
 
+
 class PolyTransformation(BaseEstimator, TransformerMixin):
-    def __init__(self, features=None, transformation=np.log10, suffix="_poly"):
+    def __init__(self, features=None, transformation=np.log10, suffix="_log"):
         self.features = features
         self.transformation = transformation
         self.suffix = suffix
@@ -112,6 +112,7 @@ class PolyTransformation(BaseEstimator, TransformerMixin):
         fitted = pd.DataFrame(fitted, index=X.index, columns=X.columns)
         fitted = fitted.add_suffix(self.suffix)
         return fitted
+
 
 class DropFeatures(BaseEstimator, TransformerMixin):
     def __init__(self, features_to_drop):
