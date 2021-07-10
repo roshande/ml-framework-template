@@ -11,9 +11,11 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.base import BaseEstimator, TransformerMixin
 
+pd.options.mode.chained_assignment=None
+
 __all__ = ['FeatureSelector', 'DictionaryVectorizer', 'TopFeatures',
            'SumTransformer', 'Binarizer', 'DateTransformer',
-           'ItemCounter', 'MeanTransformer', 'Identity']
+           'ItemCounter', 'MeanTransformer', 'Identity', 'FeatureRename']
 
 class Singleton(type):
     _instances = {}
@@ -34,6 +36,22 @@ class Identity(BaseEstimator, TransformerMixin, metaclass=Singleton):
     def transform(self, X):
         check_is_fitted(self, ['fitted'])
         return X
+
+
+class FeatureRename(BaseEstimator, TransformerMixin):
+    def fit(self, X, y):
+        self.columns = getattr(X, 'columns', None)
+        if self.columns is None:
+            return self
+        self.rename_mappings = {}
+        for col in self.columns:
+            if col.endswith("_prep"):
+                self.rename_mappings[col] = col[:-5]
+        return self
+
+    def transform(self, X):
+        check_is_fitted(self, ['columns', 'rename_mappings'])
+        return X.rename(columns=self.rename_mappings)
 
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
