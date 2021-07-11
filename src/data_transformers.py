@@ -29,28 +29,28 @@ class Identity(BaseEstimator, TransformerMixin, metaclass=Singleton):
         An identity transformer.
     """
     def fit(self, X, y=None):
-        self.fitted = True
+        self._fitted = True
         return self
 
     def transform(self, X):
-        check_is_fitted(self, ['fitted'])
+        check_is_fitted(self, ['_fitted'])
         return X
 
 
 class FeatureRename(BaseEstimator, TransformerMixin):
     def fit(self, X, y):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         if self.columns is None:
             return self
-        self.rename_mappings = {}
+        self._rename_mappings = {}
         for col in self.columns:
             if col.endswith("_prep"):
-                self.rename_mappings[col] = col[:-5]
+                self._rename_mappings[col] = col[:-5]
         return self
 
     def transform(self, X):
-        check_is_fitted(self, ['columns', 'rename_mappings'])
-        return X.rename(columns=self.rename_mappings)
+        check_is_fitted(self, ['_columns', '_rename_mappings'])
+        return X.rename(columns=self._rename_mappings)
 
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
@@ -283,17 +283,18 @@ class MeanTransformer(BaseEstimator, TransformerMixin):
 class DFStandardScaler(StandardScaler):
 
     def transform(self, X, copy=None):
-        """Perform standardization by centering and scaling
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            The data used to scale along the features axis.
-        copy : bool, default=None
-            Copy the input X or not.
-        Returns
-        -------
-        X_tr : {ndarray, sparse matrix} of shape (n_samples, n_features)
-            Transformed array.
+        """
+            Perform standardization by centering and scaling
+            Parameters
+            ----------
+            X : {array-like, sparse matrix} of shape (n_samples, n_features)
+                The data used to scale along the features axis.
+            copy : bool, default=None
+                Copy the input X or not.
+            Returns
+            -------
+            X_tr : {ndarray, sparse matrix} of shape (n_samples, n_features)
+                Transformed array.
         """
         index = getattr(X, 'index', None)
         columns = getattr(X, 'columns', None)

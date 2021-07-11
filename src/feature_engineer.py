@@ -4,6 +4,7 @@ import math
 import numbers
 import warnings
 from itertools import combinations
+from random import sample
 from numpy.random import uniform
 from sklearn.neighbors import NearestNeighbors
 from sklearn.base import BaseEstimator, TransformerMixin
