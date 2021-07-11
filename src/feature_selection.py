@@ -2,9 +2,12 @@ import pandas as pd
 import sklearn.feature_selection as fs
 from sklearn.utils.validation import check_is_fitted
 
-__all__ = ['SelectKBestWrapper', 'SelectFromModelWrapper', 'VarianceThresholdWrapper',
-           'SelectPercentileWrapper', 'GenericUnivariateSelectWrapper',
-           'quant_col_selector', 'cat_col_selector']
+
+__all__ = ['SelectKBestWrapper', 'SelectFromModelWrapper',
+           'VarianceThresholdWrapper', 'SelectPercentileWrapper',
+           'GenericUnivariateSelectWrapper', 'quant_col_selector',
+           'cat_col_selector']
+
 
 def quant_col_selector(X):
     return X.select_dtypes(include="number").columns.to_list()
@@ -99,4 +102,3 @@ class SelectFromModelWrapper(fs.SelectFromModel):
             columns = self.columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret
-

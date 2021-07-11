@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
 
+
 def optimal_cutoff(estimator, X, y, ax, name):
     y_probs = pd.Series(estimator.predict_proba(X)[:, 1], index=y.index)
 
@@ -41,8 +42,8 @@ def show_performance(estimator, X_train, y_train, X_test, y_test):
     print("\nTrain Score: {}\nTest Score: {}".format(train_score, test_score))
 
     # Display scores
-    train_auc_score = metrics.roc_auc_score(y_train, y_train_probs[:,1])
-    test_auc_score = metrics.roc_auc_score(y_test, y_test_probs[:,1])
+    train_auc_score = metrics.roc_auc_score(y_train, y_train_probs[:, 1])
+    test_auc_score = metrics.roc_auc_score(y_test, y_test_probs[:, 1])
     print("\nTrain AUC Score: {}\nTest AUC Score: {}".format(train_auc_score, test_auc_score))
 
     # Display scores

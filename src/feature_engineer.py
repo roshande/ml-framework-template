@@ -7,10 +7,10 @@ from itertools import combinations
 from numpy.random import uniform
 from sklearn.neighbors import NearestNeighbors
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.utils.estimator_checks import check_estimator
-from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
+from sklearn.utils.validation import check_is_fitted, check_array
 
-__all__ = ['CatCombine', 'CatQuantCombine', 'Clustering', 'Binning']
+
+__all__ = ['CatCrosses', 'CatQuantCrosses', 'Clustering', 'Binning']
 
 
 def engineer_categorical_features(data, cat_columns=None, max_comb=None):
@@ -18,12 +18,13 @@ def engineer_categorical_features(data, cat_columns=None, max_comb=None):
         cat_columns = data.select_dtypes(exclude="number").columns
     ret_df = pd.DataFrame()
     for idx, col in enumerate(cat_columns):
-        ret_df[col] = data[col]+ str(idx)
-    max_comb = len(cat_columns)+1 if max_comb is None else max_comb
+        ret_df[col] = data[col] + str(idx)
+    max_comb = len(cat_columns) + 1 if max_comb is None else max_comb
     for r in range(2, max_comb):
         for comb in combinations(cat_columns, r):
             col_name = "+".join(comb)
-            ret_df[col_name] = ret_df[list(comb)].apply(lambda row: "+".join(row.values), axis=1)
+            ret_df[col_name] = ret_df[list(comb)].apply(
+                lambda row: "+".join(row.values), axis=1)
 
     new_cols = ret_df.columns[~ret_df.columns.isin(cat_columns)]
     return ret_df[new_cols]
@@ -31,7 +32,8 @@ def engineer_categorical_features(data, cat_columns=None, max_comb=None):
 
 class CatCrosses(BaseEstimator, TransformerMixin):
     def __init__(self, cat_features=None):
-        assert cat_features is None or len(cat_features) > 1, "Combine more than one features"
+        assert cat_features is None or len(cat_features) > 1,\
+                "Combine more than one features"
         self.cat_features = cat_features
 
     def fit(self, X, y=None):
@@ -42,15 +44,20 @@ class CatCrosses(BaseEstimator, TransformerMixin):
         return "+".join(self.cat_features)
 
     def transform(self, X):
+        def join_values(row):
+            return "+".join([row[feat]+str(idx)
+                             for idx, feat in enumerate(self.cat_features)])
+
         check_is_fitted(self, ['input_shape_'])
         if X.shape[1] != self.input_shape_:
             raise ValueError("Shape of input is different from what was seen"
                              "in `fit`")
         if self.cat_features is None:
             self.cat_features = X.columns.to_list()
-        join_values = lambda row: "+".join([row[feat]+str(idx) for idx, feat in enumerate(self.cat_features)])
         colname = self.__colname()
-        return X[self.cat_features].apply(join_values, axis=1).to_frame(colname)
+        return X[self.cat_features]\
+            .apply(join_values, axis=1)\
+            .to_frame(colname)
 
 
 class CatQuantCrosses(BaseEstimator, TransformerMixin):
@@ -68,7 +75,9 @@ class CatQuantCrosses(BaseEstimator, TransformerMixin):
         return "+".join(self.cats)
 
     def combine_cats(self, X):
-        join_values = lambda row: "+".join([row[feat]+str(idx) for idx, feat in enumerate(self.cats)])
+        def join_values(row):
+            return "+".join([row[feat]+str(idx)
+                             for idx, feat in enumerate(self.cats)])
         colname = self.__colname()
         return X[self.cats].apply(join_values, axis=1).to_frame(colname)
 
@@ -76,8 +85,10 @@ class CatQuantCrosses(BaseEstimator, TransformerMixin):
         new_df = self.combine_cats(X)
         new_df = pd.concat([new_df, X[self.quants]], axis=1)
         colname = self.__colname()
-        agg_features = new_df.groupby(colname).agg({quant: self.mappers for quant in self.quants})
-        agg_features.columns = [colname + '_'.join(c).strip("_") for c in agg_features.columns]
+        agg_features = new_df.groupby(colname).agg(
+            {quant: self.mappers for quant in self.quants})
+        agg_features.columns = [colname + '_'.join(c).strip("_")
+                                for c in agg_features.columns]
         return agg_features
 
     def transform(self, X):
@@ -104,7 +115,8 @@ class PolyTransformation(BaseEstimator, TransformerMixin):
         if self.features is None:
             self.features = X.columns
         elif not all(map(lambda feat: feat in X.columns, self.features)):
-            raise ValueError("Not all features present {}".format(self.features))
+            raise ValueError("Not all features present {}".format(
+                self.features))
         return self
 
     def transform(self, X):
@@ -114,7 +126,7 @@ class PolyTransformation(BaseEstimator, TransformerMixin):
         return fitted
 
 
-class DropFeatures(BaseEstimator, TransformerMixin):
+class FeaturesDrop(BaseEstimator, TransformerMixin):
     def __init__(self, features_to_drop):
         self.features_to_drop = features_to_drop
 
@@ -134,8 +146,6 @@ class Clustering(BaseEstimator, TransformerMixin):
 
     def hopkins(self, X):
         d = X.shape[1]
-        #d = len(vars) # columns
-        #n = len(X) # rows
         n = X.shape[0]
         m = int(0.1 * n)
         nbrs = NearestNeighbors(n_neighbors=1).fit(X)
@@ -145,22 +155,24 @@ class Clustering(BaseEstimator, TransformerMixin):
         ujd = []
         wjd = []
         for j in range(0, m):
-            u_dist, _ = nbrs.kneighbors(uniform(np.amin(X, axis=0),np.amax(X, axis=0), d).reshape(1, -1),
-                                        2, return_distance=True)
+            u_dist, _ = nbrs.kneighbors(
+                uniform(np.amin(X, axis=0),
+                        np.amax(X, axis=0), d).reshape(1, -1),
+                2, return_distance=True)
             ujd.append(u_dist[0][1])
-            w_dist, _ = nbrs.kneighbors(X.iloc[rand_X[j]].to_numpy().reshape(1, -1), 2, return_distance=True)
+            w_dist, _ = nbrs.kneighbors(X.iloc[rand_X[j]].to_numpy()
+                                        .reshape(1, -1), 2,
+                                        return_distance=True)
             wjd.append(w_dist[0][1])
 
         H = sum(ujd) / (sum(ujd) + sum(wjd))
         if math.isnan(H):
-            #print(ujd, wjd)
             H = 0
         return H
 
     def fit(self, X, y=None):
         self.columns = getattr(X, 'columns', None)
         X = check_array(X)
-        #hopkin_score = self.hopkins(X)
         self.clus_algo.fit(X)
         self.input_shape_ = X.shape[1]
         return self
@@ -174,7 +186,8 @@ class Clustering(BaseEstimator, TransformerMixin):
                              "in `fit`")
         clus = self.clus_algo.predict(X)
         if index is not None:
-            clus = pd.Series(clus, index=index, name=self.name, dtype="category").to_frame()
+            clus = pd.Series(clus, index=index, name=self.name,
+                             dtype="category").to_frame()
         return clus
 
 
@@ -183,8 +196,10 @@ class Binning(BaseEstimator, TransformerMixin):
         self.bins = bins
         self.suffix = suffix
         self.right = right
-        if not (labels is None or any(map(lambda val: isinstance(val, numbers.Number), labels))):
-            warnings.warn("Ordinality of data missing by the labels `{}`".format(labels))
+        if not (labels is None or
+                any(map(lambda val: isinstance(val, numbers.Number), labels))):
+            warnings.warn("Ordinality of data missing by the labels"
+                          "`{}`".format(labels))
         self.labels = labels
 
     def fit(self, X, y=None):
@@ -196,6 +211,6 @@ class Binning(BaseEstimator, TransformerMixin):
     def transform(self, X):
         if X.shape[1] != 1:
             raise ValueError("Binning with only 1-dimensional data")
-        trans = pd.cut(X.iloc[:,0], self.bins, self.right, self.labels, ordered=True)
+        trans = pd.cut(X.iloc[:, 0], self.bins, self.right, self.labels,
+                       ordered=True)
         return trans.to_frame().add_suffix(self.suffix)
-

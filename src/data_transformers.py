@@ -1,27 +1,26 @@
 import re
 import pandas as pd
-import numpy as np
-from datetime import datetime
 from collections.abc import Sequence
-from sklearn import linear_model
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.estimator_checks import check_estimator
-from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
+from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.base import BaseEstimator, TransformerMixin
 
-pd.options.mode.chained_assignment=None
+pd.options.mode.chained_assignment = None
 
 __all__ = ['FeatureSelector', 'DictionaryVectorizer', 'TopFeatures',
            'SumTransformer', 'Binarizer', 'DateTransformer',
            'ItemCounter', 'MeanTransformer', 'Identity', 'FeatureRename']
 
+
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
@@ -56,8 +55,9 @@ class FeatureRename(BaseEstimator, TransformerMixin):
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
     """
-        This transformer is really straightforward - it simply takes the name of the column we want to
-        extract and if we use it, it will 'spit out' the data column of our Data Frame.
+        This transformer is really straightforward - it simply takes the name
+        of the column we want to extract and if we use it, it will 'spit out'
+        the data column of our Data Frame.
     """
     def __init__(self, features):
         if callable(features):
@@ -71,9 +71,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         if callable(self.features):
             feature_names = self.features(X)
-            feature_vals = X.loc[:, feature_names]
+            assert all(map(lambda val: val in X.columns, feature_names))
         elif isinstance(self.features, Sequence):
-            feature_vals = X.loc[:, self.features]
+            assert all(map(lambda val: val in X.columns, self.features))
         self.input_shape_ = X.shape[1]
         return self
 
@@ -103,7 +103,8 @@ class DictionaryVectorizer(BaseEstimator, TransformerMixin):
 
     @staticmethod
     def extract_items(list_, key, all_=True):
-        sub = lambda x: re.sub(r'[^A-Za-z0-9]', '_', x)
+        def sub(x):
+            return re.sub(r'[^A-Za-z0-9]', '_', x)
         if all_:
             target = []
             for dict_ in eval(list_):
@@ -129,7 +130,9 @@ class DictionaryVectorizer(BaseEstimator, TransformerMixin):
                              'in `fit`')
         genres = X.apply(lambda x: self.extract_items(x, self.key))
         data = self.vectorizer.transform(genres)
-        return pd.DataFrame(data.toarray(), columns=self.vectorizer.get_feature_names(), index=X.index)
+        return pd.DataFrame(data.toarray(),
+                            columns=self.vectorizer.get_feature_names(),
+                            index=X.index)
 
 
 class TopFeatures(BaseEstimator, TransformerMixin):
@@ -204,12 +207,13 @@ class Binarizer(BaseEstimator, TransformerMixin):
         if X.shape[1] != self.input_shape_:
             raise ValueError('Shape of input is different from what was seen'
                              'in `fit`')
-        return X.apply(lambda x : int(self.condition(x))).to_frame(self.name)
+        return X.apply(lambda x: int(self.condition(x))).to_frame(self.name)
 
 
 class DateTransformer(BaseEstimator, TransformerMixin):
     """
-         This transformer takes a date in string format and extract values of interest.
+        This transformer takes a date in string format and extract values of
+        interest.
     """
 
     def __init__(self):
@@ -275,6 +279,7 @@ class MeanTransformer(BaseEstimator, TransformerMixin):
                              'in `fit`')
         return X.mean(axis=1).to_frame(self.name)
 
+
 class DFStandardScaler(StandardScaler):
 
     def transform(self, X, copy=None):
@@ -296,6 +301,7 @@ class DFStandardScaler(StandardScaler):
         if columns is not None and index is not None:
             X = pd.DataFrame(X, columns=columns, index=index)
         return X
+
 
 if __name__ == '__main__':
     check_estimator(Identity())

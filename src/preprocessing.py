@@ -4,7 +4,9 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 
+
 __all__ = ['Numeric', 'FillNa']
+
 
 class Numeric(BaseEstimator, TransformerMixin):
     def __init__(self, errors="coerce", fillna_value=0, dtype=np.int32, suffix="_prep"):
@@ -27,10 +29,12 @@ class Numeric(BaseEstimator, TransformerMixin):
             X = X.convert_dtypes()
         return X
 
+
 FILLING_MAP = {
     "median": lambda X: X.quantile(0.5),
     "mode": lambda X: mode(X)[0]
 }
+
 
 class FillNa(BaseEstimator, TransformerMixin):
     def __init__(self, method="median", suffix="_prep"):
