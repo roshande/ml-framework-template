@@ -138,3 +138,5 @@ viz/
 *.h5
 *.pkl
 *.pth
+*.z
+*.joblib

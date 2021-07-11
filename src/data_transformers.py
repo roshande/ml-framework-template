@@ -40,10 +40,10 @@ class Identity(BaseEstimator, TransformerMixin, metaclass=Singleton):
 class FeatureRename(BaseEstimator, TransformerMixin):
     def fit(self, X, y):
         self._columns = getattr(X, 'columns', None)
-        if self.columns is None:
+        if self._columns is None:
             return self
         self._rename_mappings = {}
-        for col in self.columns:
+        for col in self._columns:
             if col.endswith("_prep"):
                 self._rename_mappings[col] = col[:-5]
         return self
@@ -119,11 +119,11 @@ class DictionaryVectorizer(BaseEstimator, TransformerMixin):
         self.input_shape_ = X.shape[1]
         genres = X.apply(lambda x: self.extract_items(x, self.key, self.all_))
         self.vectorizer = CountVectorizer().fit(genres)
-        self.columns = self.vectorizer.get_feature_names()
+        self._columns = self.vectorizer.get_feature_names()
         return self
 
     def transform(self, X):
-        check_is_fitted(self, ['input_shape_'])
+        check_is_fitted(self, ['input_shape_', '_columns'])
         X = check_array(X)
         if X.shape[1] != self.input_shape_:
             raise ValueError('Shape of input is different from what was seen'
@@ -131,7 +131,7 @@ class DictionaryVectorizer(BaseEstimator, TransformerMixin):
         genres = X.apply(lambda x: self.extract_items(x, self.key))
         data = self.vectorizer.transform(genres)
         return pd.DataFrame(data.toarray(),
-                            columns=self.vectorizer.get_feature_names(),
+                            columns=self._columns,
                             index=X.index)
 
 
@@ -152,16 +152,16 @@ class TopFeatures(BaseEstimator, TransformerMixin):
         self.input_shape_ = X.shape[1]
         counts = X.sum().sort_values(ascending=False)
         index_ = int(counts.shape[0]*self.percent/100)
-        self.columns = counts[:index_].index
+        self._columns = counts[:index_].index
         return self
 
     def transform(self, X):
-        check_is_fitted(self, ['input_shape_'])
+        check_is_fitted(self, ['input_shape_', '_columns'])
         X = check_array(X)
         if X.shape[1] != self.input_shape_:
             raise ValueError('Shape of input is different from what was seen'
                              'in `fit`')
-        return X[self.columns]
+        return X[self._columns]
 
 
 class SumTransformer(BaseEstimator, TransformerMixin):
