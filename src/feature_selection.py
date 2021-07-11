@@ -19,86 +19,86 @@ def cat_col_selector(X):
 
 class PandasWrapper:
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
-            return pd.DataFrame(ret, index=X.index, columns=self.columns)
+        if self._columns is not None:
+            return pd.DataFrame(ret, index=X.index, columns=self._columns)
 
 
 class SelectKBestWrapper(fs.SelectKBest):
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
+        if self._columns is not None:
             mask = self.get_support()
-            columns = self.columns[mask]
+            columns = self._columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret
 
 
 class GenericUnivariateSelectWrapper(fs.GenericUnivariateSelect):
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
+        if self._columns is not None:
             mask = self.get_support()
-            columns = self.columns[mask]
+            columns = self._columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret
 
 
 class SelectPercentileWrapper(fs.SelectPercentile):
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
+        if self._columns is not None:
             mask = self.get_support()
-            columns = self.columns[mask]
+            columns = self._columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret
 
 
 class VarianceThresholdWrapper(fs.VarianceThreshold):
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
+        if self._columns is not None:
             mask = self.get_support()
-            columns = self.columns[mask]
+            columns = self._columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret
 
 
 class SelectFromModelWrapper(fs.SelectFromModel):
     def fit(self, X, y=None):
-        self.columns = getattr(X, 'columns', None)
+        self._columns = getattr(X, 'columns', None)
         return super().fit(X, y)
 
     def transform(self, X):
-        check_is_fitted(self, ['columns'])
+        check_is_fitted(self, ['_columns'])
         ret = super().transform(X)
-        if self.columns is not None:
+        if self._columns is not None:
             mask = self.get_support()
-            columns = self.columns[mask]
+            columns = self._columns[mask]
             return pd.DataFrame(ret, index=X.index, columns=columns)
         return ret

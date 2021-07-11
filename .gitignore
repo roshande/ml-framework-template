@@ -131,6 +131,7 @@ dmypy.json
 # input and models
 inputs/
 models/
+viz/
 
 # data files
 *.csv
